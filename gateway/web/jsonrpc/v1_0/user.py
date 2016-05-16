@@ -3,7 +3,7 @@
 import os
 import json
 from ..validrequest import ValidRequestHandler
-from ..pyjsonrpc import rpcresponse
+from gateway.base.pyjsonrpc import rpcresponse
 from ...database import user as dbuser
 
 class JsonrpcUserHandler(ValidRequestHandler):
@@ -69,7 +69,7 @@ class JsonrpcUserHandler(ValidRequestHandler):
     def post(self, path = None):
         if self.validate_jsonrpc():
 
-            dbpath = os.path.join(self.settings["webroot"], "gateway.db")
+            dbpath = os.path.join(self.settings["root"], "data/gateway.db")
             self.conn = dbuser.User(dbpath)
 
             #添加用户

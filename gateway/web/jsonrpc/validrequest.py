@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import os
-from .pyjsonrpc import rpcrequest
-from .pyjsonrpc import rpcresponse
+from gateway.base.pyjsonrpc import rpcrequest
+from gateway.base.pyjsonrpc import rpcresponse
 from tornado.web import RequestHandler
 
 class ValidRequestHandler(RequestHandler):

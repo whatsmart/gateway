@@ -2,7 +2,7 @@
 
 import os
 from ..validrequest import ValidRequestHandler
-from ..pyjsonrpc import rpcresponse
+from gateway.base.pyjsonrpc import rpcresponse
 
 class JsonrpcDeviceHandler(ValidRequestHandler):
 

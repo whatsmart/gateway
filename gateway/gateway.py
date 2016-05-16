@@ -9,6 +9,7 @@ from .web.index import IndexHandler
 from .web.device import DeviceHandler
 from .web.jsonrpc.v1_0.device import JsonrpcDeviceHandler
 from .web.jsonrpc.v1_0.user import JsonrpcUserHandler
+from .web.jsonrpc.v1_0.control import JsonrpcControlHandler
 
 class Gateway(object):
     """设备是一个字典列表，每个设备由一个字典表示
@@ -25,6 +26,7 @@ class Gateway(object):
 
     def __init__(self):
         self.loop = IOLoop.instance()
+        self.futures = []
 #        self.devices = []
         self.devices = [{
                         "id": 10,
@@ -37,18 +39,32 @@ class Gateway(object):
                         "type": "lighting",
                         "operations": ["power_on", "power_off", "get_color", "set_color", "get_brightness", "set_brightness"] 
                        },]
-        self.hub = gateway.hub.server.HubServer()
+        self.hub = gateway.hub.server.HubServer(gateway = self)
         self.web = tornado.web.Application(
             [
                 (r"/", IndexHandler),
                 (r"/device", DeviceHandler),
                 (r"/jsonrpc/v1.0/device", JsonrpcDeviceHandler),
                 (r"/jsonrpc/v1.0/device/(\d+)", JsonrpcDeviceHandler),
-#                (r"/jsonrpc/v1.0/control/(\d+)", JsonrpcDeviceHandler),
+                (r"/jsonrpc/v1.0/control/(\d+)", JsonrpcControlHandler),
                 (r"/jsonrpc/v1.0/user", JsonrpcUserHandler),
                 (r"/jsonrpc/v1.0/user/(\d+)", JsonrpcUserHandler),
-            ], gateway = self, webroot = os.path.join(os.path.dirname(__file__), "web"))
+            ], gateway = self, root = os.path.dirname(__file__))
         self.web.listen(80)
+
+    def add_future(self, fut):
+        self.futures.append(fut)
+
+    def remove_future(self, fut):
+        for i, f in enumerate(self.futures):
+            if f is fut:
+                self.futures.pop(i)
+
+    def future_result(self, fid, result):
+        fid = int(fid)
+        for f in self.futures:
+            if fid == id(f):
+                f.set_result(result)
 
     def run(self):
         self.loop.start()
