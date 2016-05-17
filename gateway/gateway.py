@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import os
+import getopt
+import sys
 import tornado.web
 import gateway.hub.server
 from tornado.ioloop import IOLoop
@@ -24,22 +26,11 @@ class Gateway(object):
     device["operations"] 支持的操作方法，如“power_on”，该值为列表，如["power_on", "set_color", ...]
     """
 
-    def __init__(self):
+    def __init__(self, hubport = None, webport = 80):
         self.loop = IOLoop.instance()
         self.futures = []
-#        self.devices = []
-        self.devices = [{
-                        "id": 10,
-                        "name": "unknow",
-                        "position": "unknow",
-                        "vender": "Obama",
-                        "uniqid": "er-fd-ef-gf-cv-df",
-                        "hwversion": "1.2",
-                        "swversion": "2.0",
-                        "type": "lighting",
-                        "operations": ["power_on", "power_off", "get_color", "set_color", "get_brightness", "set_brightness"] 
-                       },]
         self.hub = gateway.hub.server.HubServer(gateway = self)
+        self.hub.listen(hubport)
         self.web = tornado.web.Application(
             [
                 (r"/", IndexHandler),
@@ -50,7 +41,7 @@ class Gateway(object):
                 (r"/jsonrpc/v1.0/user", JsonrpcUserHandler),
                 (r"/jsonrpc/v1.0/user/(\d+)", JsonrpcUserHandler),
             ], gateway = self, root = os.path.dirname(__file__))
-        self.web.listen(80)
+        self.web.listen(webport)
 
     def add_future(self, fut):
         self.futures.append(fut)
@@ -70,6 +61,15 @@ class Gateway(object):
         self.loop.start()
 
 if __name__ == "__main__":
-    gateway = Gateway()
-  
+    optlist, args = getopt.getopt(sys.argv[1:], "h:w:")
+    hubport = None
+    webport = 80
+    for opt in optlist:
+        if "h" in opt[0]:
+            hubport = int(opt[1])
+        if "w" in opt[0]:
+            webport = int(opt[1])
+
+    gateway = Gateway(hubport = hubport, webport = webport)
+
     gateway.run()

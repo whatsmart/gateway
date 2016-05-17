@@ -14,7 +14,7 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 did = int(did)
 
             if self.rpcreq.method == "get_devices":
-                resp = rpcresponse.Response(jsonrpc = "2.0", result = gateway.devices, id = self.rpcreq.id)
+                resp = rpcresponse.Response(jsonrpc = "2.0", result = gateway.hub.devices, id = self.rpcreq.id)
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.dumps().encode("utf-8"))
 
@@ -24,7 +24,7 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 if did is None or name is None:
                     self.resp_unknow_error()
                 else:
-                    for dev in gateway.devices:
+                    for dev in gateway.hub.devices:
                         if dev["id"] == did:
                             dev["name"] = name
                             self.resp_success()
@@ -36,7 +36,7 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 if did is None:
                     self.resp_unknow_error()
                 else:
-                    for dev in gateway.devices:
+                    for dev in gateway.hub.devices:
                         if dev["id"] == did:
                             resp = rpcresponse.Response(jsonrpc = "2.0", result = dev["name"], id = self.rpcreq.id)
                             self.set_header("Content-Type", "application/json; charset=utf-8")
@@ -51,7 +51,7 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 if did is None or position is None:
                     self.resp_unknow_error()
                 else:
-                    for dev in gateway.devices:
+                    for dev in gateway.hub.devices:
                         if dev["id"] == did:
                             dev["position"] = position
                             self.resp_success()
@@ -63,7 +63,7 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 if did is None:
                     self.resp_unknow_error()
                 else:
-                    for dev in gateway.devices:
+                    for dev in gateway.hub.devices:
                         if dev["id"] == did:
                             resp = rpcresponse.Response(jsonrpc = "2.0", result = dev["position"], id = self.rpcreq.id)
                             self.set_header("Content-Type", "application/json; charset=utf-8")
