@@ -56,6 +56,11 @@ class User(object):
             cursor.execute('''INSERT INTO user (username, password, `group`) VALUES (?, ?, ?)''', (username, digest, "admin"))
         else:
             cursor.execute('''INSERT INTO user (username, password, `group`) VALUES (?, ?, ?)''', (username, digest, "user"))
+            #用户名已经存在
+            if cursor.rowcount != 1:
+                self.conn.commit()
+                cursor.close()
+                return False
         self.conn.commit()
         cursor.close()
         return True
@@ -68,7 +73,7 @@ class User(object):
         num = cursor.rowcount
         self.conn.commit()
         cursor.close()
-        if num == 0:
+        if num != 1:
             return False
         return True
 

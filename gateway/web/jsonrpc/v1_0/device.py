@@ -2,77 +2,78 @@
 
 import os
 from ..validrequest import ValidRequestHandler
-from gateway.base.pyjsonrpc import rpcresponse
+from gateway.base import jsonrpc
+from gateway.web import database
 
 class JsonrpcDeviceHandler(ValidRequestHandler):
 
     def post(self, did = None):
         if self.validate_jsonrpc():
-
             gateway = self.settings["gateway"]
-            if did is not None:
-                did = int(did)
+            device = None
 
             if self.rpcreq.method == "get_devices":
-                resp = rpcresponse.Response(jsonrpc = "2.0", result = gateway.hub.devices, id = self.rpcreq.id)
+                resp = jsonrpc.Response(jsonrpc = "2.0", result = gateway.hub.devices, id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
-                self.write(resp.dumps().encode("utf-8"))
+                self.write(resp.encode("utf-8"))
+                return
 
-            elif self.rpcreq.method == "set_name":
+            if did is None:
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "without a device id in url"), id = self.rpcreq.id).dumps()
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.encode("utf-8"))
+                return
+
+            for dev in gateway.hub.devices:
+                if dev["id"] == int(did):
+                    device = dev
+                    break
+
+            if device is None:
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "can't find the device with that id"), id = self.rpcreq.id).dumps()
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.encode("utf-8"))
+                return
+
+            if self.rpcreq.method == "set_name":
                 name = self.rpcreq.params.get("name")
-
-                if did is None or name is None:
-                    self.resp_unknow_error()
+                if not name:
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "need a string"), id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
                 else:
-                    for dev in gateway.hub.devices:
-                        if dev["id"] == did:
-                            dev["name"] = name
-                            self.resp_success()
-                            break
-                    else:
-                        self.resp_unknow_error()
+                    # @todo update name in database
+                    device["name"] = name
+                    self.resp_success()
+                return
 
             elif self.rpcreq.method == "get_name":
-                if did is None:
-                    self.resp_unknow_error()
-                else:
-                    for dev in gateway.hub.devices:
-                        if dev["id"] == did:
-                            resp = rpcresponse.Response(jsonrpc = "2.0", result = dev["name"], id = self.rpcreq.id)
-                            self.set_header("Content-Type", "application/json; charset=utf-8")
-                            self.write(resp.dumps().encode("utf-8"))
-                            break
-                    else:
-                        self.resp_unknow_error()
+                resp = jsonrpc.Response(jsonrpc = "2.0", result = device["name"], id = self.rpcreq.id)
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.dumps().encode("utf-8"))
+                return
 
             elif self.rpcreq.method == "set_position":
                 position = self.rpcreq.params.get("position")
 
-                if did is None or position is None:
-                    self.resp_unknow_error()
+                if not position:
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "need a string"), id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
                 else:
-                    for dev in gateway.hub.devices:
-                        if dev["id"] == did:
-                            dev["position"] = position
-                            self.resp_success()
-                            break
-                    else:
-                        self.resp_unknow_error()
+                    # @todo update position in database
+                    device["position"] = position
+                    self.resp_success()
+                return
 
             elif self.rpcreq.method == "get_position":
-                if did is None:
-                    self.resp_unknow_error()
-                else:
-                    for dev in gateway.hub.devices:
-                        if dev["id"] == did:
-                            resp = rpcresponse.Response(jsonrpc = "2.0", result = dev["position"], id = self.rpcreq.id)
-                            self.set_header("Content-Type", "application/json; charset=utf-8")
-                            self.write(resp.dumps().encode("utf-8"))
-                            break
-                    else:
-                        self.resp_unknow_error()
+                resp = jsonrpc.Response(jsonrpc = "2.0", result = device["position"], id = self.rpcreq.id)
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.dumps().encode("utf-8"))
+                return
 
             else:
-                self.resp_unknow_error()
-        else:
-            pass
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "invalid rpc method"), id = self.rpcreq.id).dumps()
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.encode("utf-8"))
+                return

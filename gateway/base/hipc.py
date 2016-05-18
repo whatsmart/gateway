@@ -4,9 +4,7 @@ import time
 import binascii
 
 class Parser(object):
-    '''values in first line, header fields and field values are utf-8 strings,
-    when parsing, convert bytes to utf-8 string, when serializing, convert them
-    to bytes, message body can be any kind of data
+    '''消息体可以为任意类型数据，除了消息体之外，其他所有自负均采用ascii码
     '''
 
     state_firstline = 1
@@ -17,57 +15,56 @@ class Parser(object):
     def __init__(self):
         self.state = self.state_firstline
         self.message = None
-        self.buffer = bytearray()
+        self.buffer = bytes()
         self.cursor = 0
         self.done_callback = None
 
-    #@params data should be bytes or bytearray
     def parse(self, data):
-        self.buffer.extend(data)
+        self.buffer += data
         if self.state == self.state_firstline:
-            if self.buffer.find("\r\n".encode("ascii")) == -1:
+            if self.buffer.find(b"\r\n") == -1:
                 return
-            if not self.buffer.startswith("HIPC".encode("ascii")):
-                index = self.buffer.find("HIPC".encode("ascii"))
+            if not self.buffer.startswith(b"HIPC"):
+                index = self.buffer.find(b"HIPC")
                 if index == -1:
                     self.buffer = bytearray()
                 else:
                     self.buffer = self.buffer[index:]
 
-            tp = self.buffer.partition("\r\n".encode("ascii"))
-            if tp[1] == "\r\n".encode("ascii"):
+            tp = self.buffer.partition(b"\r\n")
+            if tp[1] == b"\r\n":
                 self.buffer = tp[2]
                 line = tp[0]
 
                 words = line.split()
                 if len(words) > 1:
-                    if words[1] == "request".encode("ascii"):
+                    if words[1] == b"request":
                         self.message = Request()
-                        self.message.version = words[0].split("/".encode("ascii"))[1].decode("utf-8")
-                        self.message.resource = words[2].decode("utf-8") if len(words) > 2 else ""
+                        self.message.version = words[0].split(b"/")[1].decode("ascii")
+                        self.message.resource = words[2].decode("ascii") if len(words) > 2 else ""
                         self.state = self.state_headers
-                    elif words[1] == "response".encode("ascii"):
+                    elif words[1] == b"response":
                         self.message = Response()
-                        self.message.version = words[0].split("/".encode("ascii"))[1].decode("utf-8")
-                        self.message.dest = words[2].decode("utf-8") if len(words) > 2 else ""
-                        self.state = state_headers
+                        self.message.version = words[0].split(b"/")[1].decode("ascii")
+                        self.message.dest = words[2].decode("ascii") if len(words) > 2 else ""
+                        self.state = self.state_headers
                 else:
                     print("parse first line error")
                     pass
 
         if self.state == self.state_headers:
-            lines = self.buffer.split("\r\n".encode("ascii"))
+            lines = self.buffer.split(b"\r\n")
 
             for line in lines:
-                p = self.buffer.find("\r\n".encode("utf-8"))
-                self.buffer = self.buffer[p+len("\r\n".encode("utf-8")):]
+                p = self.buffer.find(b"\r\n")
+                self.buffer = self.buffer[p+len(b"\r\n"):]
                 if not line:
                     self.state = self.state_body
                     break
                 else:
-                    tp = line.partition(":".encode("ascii"))
-                    if tp[1] == ":".encode("ascii") and tp[0].strip():
-                        self.message.headers[tp[0].decode("utf-8").strip()] = tp[2].decode("utf-8").strip()
+                    tp = line.partition(b":")
+                    if tp[1] == b":" and tp[0].strip():
+                        self.message.headers[tp[0].decode("ascii").strip()] = tp[2].decode("ascii").strip()
                     else:
                         print("parse header error")
                         self.state = self.state_firstline
@@ -104,30 +101,30 @@ class Parser(object):
                 self.parse(bytearray())
 
 class Request(object):
-    def __init__(self, resource = "", headers = {}, body = "", version = "1.0"):
+    def __init__(self, resource = "", headers = {}, body = bytes(), version = "1.0"):
         self.version = version #str
         self.resource = resource #str
         self.headers = headers #dict, str: str
-        self.body = body #str
+        self.body = body #bytes
 
     def forward(self, by):
         if self.headers.get("origin"):
-            self.headers["origin"] += "@".encode("utf-8") + by.encode("utf-8")
+            self.headers["origin"] += "@" + by
         else:
-            self.headers["origin"] = "@".encode("utf-8") + by.encode("utf-8")
+            self.headers["origin"] = "@" + by
 
-    def binary(self):
-        s = bytearray()
-        s += "HIPC/".encode("ascii") + (self.version.encode("utf-8") if self.version else "1.0".encode("utf-8")) + " request".encode("ascii") + " ".encode("ascii") + self.resource.encode("utf-8") + "\r\n".encode("ascii")
+    def bytes(self):
+        s = ""
+        s += "HIPC/" + (self.version if self.version else "1.0") + \
+             " request" + (" " + self.resource if self.resource else "") + "\r\n"
         self.headers["length"] = str(len(self.body))
         self.headers["checksum"] = str(binascii.crc32(self.body))
-
         if self.headers:
             for k in self.headers.keys():
-                s += k.encode("utf-8") + ": ".encode("ascii") + self.headers[k].encode("utf-8") + "\r\n".encode("ascii")
+                s += k + ": " + self.headers[k] + "\r\n"
+        s += "\r\n"
 
-        s += "\r\n".encode("ascii") + self.body
-        return s
+        return bytes(s, "ascii") + self.body
 
     def __str__(self):
         s = "HIPC Request\n"
@@ -135,15 +132,15 @@ class Request(object):
         s += "resource: " + self.resource + "\n"
         for k in self.headers.keys():
             s += k + ": " + self.headers[k] + "\n"
-        s += self.body.decode("utf-8")
+
         return s
 
 class Response(object):
-    def __init__(self, dest = "", headers = {}, body = "", version = "1.0"):
+    def __init__(self, dest = "", headers = {}, body = bytes(), version = "1.0"):
         self.version = version #str
         self.dest = dest
         self.headers = headers #dict, str, str
-        self.body = body #str
+        self.body = body #bytes
 
     def forward(self):
         if self.dest:
@@ -153,17 +150,18 @@ class Response(object):
                 return t[2]
         return ""
 
-    def binary(self):
-        s = bytearray()
-        s += "HIPC/".encode("ascii") + (self.version.encode("utf-8") if self.version else "1.0") + " response".encode("ascii") + " ".encode("ascii") + self.dest.encode("utf-8") + "\r\n".encode("ascii")
+    def bytes(self):
+        s = ""
+        s += "HIPC/" + (self.version if self.version else "1.0") + \
+             " response" + (" " + self.dest if self.dest else "") + "\r\n"
         self.headers["length"] = str(len(self.body))
         self.headers["checksum"] = str(binascii.crc32(self.body))
         if self.headers:
             for k in self.headers.keys():
-                s += k.encode("utf-8") + ": ".encode("ascii") + self.headers[k].encode("utf-8") + "\r\n".encode("ascii")
+                s += k + ": " + self.headers[k] + "\r\n"
+        s += "\r\n"
 
-        s += "\r\n".encode("ascii") + self.body
-        return s
+        return bytes(s, "ascii") + self.body
 
     def __str__(self):
         s = "HIPC Response\n"
@@ -171,5 +169,5 @@ class Response(object):
         s += "dest: " + self.dest + "\n"
         for k in self.headers.keys():
             s += k + ": " + self.headers[k] + "\n"
-        s += self.body.decode("utf-8")
+
         return s

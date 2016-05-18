@@ -4,7 +4,7 @@ import os
 import getopt
 import sys
 import tornado.web
-import gateway.hub.server
+import gateway.hub.hubserver
 from tornado.ioloop import IOLoop
 
 from .web.index import IndexHandler
@@ -12,6 +12,8 @@ from .web.device import DeviceHandler
 from .web.jsonrpc.v1_0.device import JsonrpcDeviceHandler
 from .web.jsonrpc.v1_0.user import JsonrpcUserHandler
 from .web.jsonrpc.v1_0.control import JsonrpcControlHandler
+
+from .hub import devicehandler 
 
 class Gateway(object):
     """设备是一个字典列表，每个设备由一个字典表示
@@ -28,8 +30,13 @@ class Gateway(object):
 
     def __init__(self, hubport = None, webport = 80):
         self.loop = IOLoop.instance()
+        self.root = os.path.dirname(__file__)
         self.futures = []
-        self.hub = gateway.hub.server.HubServer(gateway = self)
+        self.hub = gateway.hub.hubserver.HubServer([
+                (r"device", devicehandler.HubDeviceHandler),
+                (r"device/(\d+)", devicehandler.HubDeviceHandler),
+#                (r"control/(\d+)", HubControlHandler)
+            ], gateway = self, root = os.path.dirname(__file__))
         self.hub.listen(hubport)
         self.web = tornado.web.Application(
             [
