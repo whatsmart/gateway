@@ -1,0 +1,17 @@
+<div id="navbar">
+    <ul class="main-menu">
+        <li><a href="">主页</a></li>
+        <li><a href="">路由设置</a></li>
+        <li><a href="/device">设备管理</a>
+            <ul class="sub-menu">
+                {% for type in devices.keys() %}
+                {% for dev in devices[type] %}
+                <li class="menu-item"><a href="/device/{{dev.get('id')}}">{{dev.get("name")}}</a></li>
+                {% end %}
+                {% end %}
+            </ul>
+        </li>
+        <li><a href="">任务管理</a></li>
+        <li><a href="">个人中心</a></li>
+    </ul>
+</div>

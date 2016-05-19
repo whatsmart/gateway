@@ -77,3 +77,5 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return
+        else:
+            self.set_status(400, "Bad Request")

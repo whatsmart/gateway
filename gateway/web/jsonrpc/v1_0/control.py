@@ -24,6 +24,7 @@ class JsonrpcControlHandler(ValidRequestHandler):
                 resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 2, message = "without a device id in url"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
+                self.finish()
                 return
 
             for dev in gateway.hub.devices:
@@ -35,12 +36,14 @@ class JsonrpcControlHandler(ValidRequestHandler):
                 resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 2, message = "can't find the device with that id"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
+                self.finish()
                 return
 
             if not self.has_permission(device):
                 resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 2, message = "you don't hava permission"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
+                self.finish()
                 return
 
             fut = Future()
@@ -66,3 +69,6 @@ class JsonrpcControlHandler(ValidRequestHandler):
             finally:
                 gateway.remove_future(fut)
                 self.finish()
+        else:
+            self.set_status(400, "Bad Request")
+            self.finish()

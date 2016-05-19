@@ -19,8 +19,10 @@ class ValidRequestHandler(RequestHandler):
         try:
             rpcreq = jsonrpc.Request.loads(self.request.body.decode("utf-8"))
         except Exception:
-            self.set_status(400, "Bad Request")
             return False
         else:
-            self.rpcreq = rpcreq
-            return True
+            if not rpcreq:
+                return False
+            else:
+                self.rpcreq = rpcreq
+                return True

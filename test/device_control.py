@@ -73,7 +73,7 @@ def sendcmd():
                 del args
                 continue
 
-            resp = hipc.Response(dest = str(args.dest), body = '{"jsonrpc": "2.0","result": null, "id": 1}'.encode("utf-8"))
+            resp = hipc.Response(dest = str(args.dest), body = '{"jsonrpc": "2.0","result": "null0000000000", "id": 1}'.encode("utf-8"))
             sock.send(resp.bytes())
 
             del args

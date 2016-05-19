@@ -1,0 +1,49 @@
+{% include header.html %}
+{% include navbar.html %}
+<div id="main">
+    <h2>基本信息</h2>
+    名称：{{device["name"]}}<br/>
+    位置：{{device["position"]}}<br/>
+    设备id：{{device["uniqid"]}}<br/>
+    设备类型：{{device["type"]}}<br/>
+    生产厂商：{{device["vender"]}}<br/>
+    软件版本：{{device["hwversion"]}}<br/>
+    硬件版本：{{device["swversion"]}}
+    <h2>控制选项</h2>
+    <div class="control">
+        <div class="power">
+            <span class="label">电源：</span><button type="button" state="off" device="{{ device['id'] }}" name="">打开</button>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    $(document).ready(function(){
+        $(".control button").click(function(){
+            var rpc = new $.JsonRpcClient({ ajaxUrl: '/jsonrpc/v1.0/control/' + {{device['id']}}, timeout: 15000 });
+            state = $(this).attr("state");
+            did = $(this).attr("device");
+            $(this).text("关闭");
+            //alert('/jsonrpc/v1.0/control/' + did);
+            if(state == "off") {
+                rpc.call(
+                    'power_on', null,
+                    function(result) {
+                        $(".control button").attr("state", "on");
+                        $(".control button").text("关闭");
+                    },
+                    function(error)  { alert('Foo bar error: ' + error); }
+                );
+            } else if (state == "on") {
+                rpc.call(
+                    'power_off', null,
+                    function(result) {
+                        $(".control button").attr("state", "off");
+                        $(".control button").text("打开");
+                    },
+                    function(error)  { alert('Foo bar error: ' + error); }
+                );
+            }
+        });
+});
+</script>
+{% include footer.html %}

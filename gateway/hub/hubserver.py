@@ -45,7 +45,21 @@ class HubServer(object):
         self.components.append(comp)
 
     def on_client_close(self):
-        for i, comp in enumerate(self.components):
+        rm_comp = []
+        rm_device = []
+        for comp in self.components:
             if comp["stream"].closed():
-                self.components.pop(i)
-                break
+                rm_comp.append(comp)
+
+        for c in rm_comp:
+            for d in self.devices:
+                if d["cid"] == c["id"]:
+                    rm_device.append(d)
+        
+        for c in self.components:
+            if c in rm_comp:
+                self.components.remove(c)
+
+        for d in enumerate(self.devices):
+            if d in rm_device:
+                self.devices.remove(d)

@@ -8,4 +8,13 @@ class IndexHandler(RequestHandler):
         return os.path.join(os.path.dirname(__file__), "template")
 
     def get(self):
-        self.render("index.html");
+        gateway = self.settings.get("gateway")
+
+        devices = {}
+        for dev in gateway.hub.devices:
+            if dev.get("type") not in devices.keys():
+                devices[dev.get("type")] = [dev]
+            else:
+                devices[dev.get("type")].append(dev)
+
+        self.render("index.html", devices = devices);

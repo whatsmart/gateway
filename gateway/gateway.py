@@ -42,12 +42,18 @@ class Gateway(object):
             [
                 (r"/", IndexHandler),
                 (r"/device", DeviceHandler),
+                (r"/device/(\d+)", DeviceHandler),
                 (r"/jsonrpc/v1.0/device", JsonrpcDeviceHandler),
                 (r"/jsonrpc/v1.0/device/(\d+)", JsonrpcDeviceHandler),
                 (r"/jsonrpc/v1.0/control/(\d+)", JsonrpcControlHandler),
                 (r"/jsonrpc/v1.0/user", JsonrpcUserHandler),
                 (r"/jsonrpc/v1.0/user/(\d+)", JsonrpcUserHandler),
-            ], gateway = self, root = os.path.dirname(__file__))
+            ],
+            compiled_template_cache = False,
+            gateway = self,
+            root = os.path.dirname(__file__),
+            static_path = os.path.join(os.path.dirname(__file__), "web/static")
+        )
         self.web.listen(webport)
 
     def add_future(self, fut):
