@@ -10,10 +10,10 @@ class HubServer(object):
         self.gateway = kwargs.get("gateway")
         self.components = []
         self.devices = [{
-                        "id": 10,
+                        "id": 0,
                         "cid": 0,
-                        "name": "unknow",
-                        "position": "unknow",
+                        "name": "未命名",
+                        "position": "未设置",
                         "vender": "Obama",
                         "uniqid": "er-fd-ef-gf-cv-df",
                         "hwversion": "1.2",
@@ -49,17 +49,17 @@ class HubServer(object):
         rm_device = []
         for comp in self.components:
             if comp["stream"].closed():
-                rm_comp.append(comp)
+                rm_comp.append(id(comp))
+                for d in self.devices:
+                    if d["cid"] == comp["id"]:
+                        rm_device.append(id(d))
 
-        for c in rm_comp:
+        for cid in rm_comp:
+            if comp in self.components:
+                if cid == id(comp):
+                    self.components.remove(comp)
+
+        for did in rm_device:
             for d in self.devices:
-                if d["cid"] == c["id"]:
-                    rm_device.append(d)
-        
-        for c in self.components:
-            if c in rm_comp:
-                self.components.remove(c)
-
-        for d in enumerate(self.devices):
-            if d in rm_device:
-                self.devices.remove(d)
+                if id(d) == did:
+                    self.devices.remove(d)

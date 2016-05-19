@@ -32,8 +32,8 @@ class HubDeviceHandler(jsonrpchandler.JsonrpcHandler):
 
         dev = { "id": did,
             "cid": self.stream.socket.fileno(),
-            "name": "unknow",
-            "position": "unknow",
+            "name": "未命名",
+            "position": "未设置",
             "vender": self.params.get("vender"),
             "uniqid": self.params.get("uniqid"),
             "hwversion": self.params.get("hwversion"),
