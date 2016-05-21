@@ -38,7 +38,7 @@ class HubDeviceHandler(jsonrpchandler.JsonrpcHandler):
             "uniqid": self.params.get("uniqid"),
             "hwversion": self.params.get("hwversion"),
             "swversion": self.params.get("swversion"),
-            "type": self.params.get("lighting"),
+            "type": self.params.get("type"),
             "operations": self.params.get("operations") 
         }
 
