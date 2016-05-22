@@ -124,7 +124,7 @@ class User(object):
             self.conn.commit()
             cursor.close()
             self.conn.close()
-            return {"id": user["id"], "group": user["group"], "permission": user["permission"], "token": token}
+            return {"id": user["id"], "group": user["group"], "permission": json.loads(user["permission"]) if user["permission"] else {}, "token": token}
         cursor.close()
         self.conn.close()
         return False
