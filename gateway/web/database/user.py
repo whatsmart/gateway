@@ -42,7 +42,6 @@ class User(object):
             for key in result.keys():
                 user[key] = result[key]
         cursor.close()
-        self.conn.close()
         return user
 
     @catch_db_error
@@ -62,11 +61,9 @@ class User(object):
             if cursor.rowcount != 1:
                 self.conn.commit()
                 cursor.close()
-                self.conn.close()
                 return False
         self.conn.commit()
         cursor.close()
-        self.conn.close()
         return True
 
     @catch_db_error
@@ -77,7 +74,6 @@ class User(object):
         num = cursor.rowcount
         self.conn.commit()
         cursor.close()
-        self.conn.close()
         if num != 1:
             return False
         return True
@@ -94,7 +90,6 @@ class User(object):
         num = cursor.rowcount
         self.conn.commit()
         cursor.close()
-        self.conn.close()
         if num == 0:
             return False
         return True
@@ -123,10 +118,8 @@ class User(object):
             cursor.execute('''update user set token = ? where username = ?''', (token, username))
             self.conn.commit()
             cursor.close()
-            self.conn.close()
             return {"id": user["id"], "group": user["group"], "permission": json.loads(user["permission"]) if user["permission"] else {}, "token": token}
         cursor.close()
-        self.conn.close()
         return False
 
     @catch_db_error
@@ -136,7 +129,6 @@ class User(object):
         num = cursor.rowcount
         cursor.close()
         self.conn.commit()
-        self.conn.close()
         if num == 0:
             return False
         return True
@@ -159,7 +151,6 @@ class User(object):
             ret.append(user)
 
         cursor.close()
-        self.conn.close()
         return ret
 
     @catch_db_error
@@ -178,11 +169,9 @@ class User(object):
             }
 
             cursor.close()
-            self.conn.close()
             return ret
         else:
             cursor.close()
-            self.conn.close()
             return False
 
     @catch_db_error
@@ -194,7 +183,6 @@ class User(object):
         num = cursor.rowcount
         cursor.close()
         self.conn.commit()
-        self.conn.close()
         if num == 0:
             return False
         return True

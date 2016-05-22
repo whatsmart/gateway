@@ -152,4 +152,4 @@ class JsonrpcUserHandler(ValidRequestHandler):
     def on_finish(self):
         if hasattr(self, "conn"):
             pass
-            #self.conn.conn.close()
+            self.conn.conn.close()
