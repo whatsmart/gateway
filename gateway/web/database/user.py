@@ -122,8 +122,8 @@ class User(object):
             token = self.gen_token(40)
             cursor.execute('''update user set token = ? where username = ?''', (token, username))
             self.conn.commit()
-            self.conn.close()
             cursor.close()
+            self.conn.close()
             return {"id": user["id"], "group": user["group"], "permission": user["permission"], "token": token}
         cursor.close()
         self.conn.close()
@@ -154,7 +154,7 @@ class User(object):
                 "id": u["id"],
                 "username": u["username"],
                 "group": u["group"],
-                "permission": json.loads(u["permission"])
+                "permission": json.loads(u["permission"]) if u["permission"] else {}
             }
             ret.append(user)
 
@@ -174,7 +174,7 @@ class User(object):
                 "id": result["id"],
                 "username": result["username"],
                 "group": result["group"],
-                "permission": json.loads(result["permission"])
+                "permission": json.loads(result["permission"]) if result["permission"] else {}
             }
 
             cursor.close()
