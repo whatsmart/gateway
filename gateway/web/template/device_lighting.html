@@ -13,7 +13,7 @@
     <h2>控制选项</h2>
     <div class="control">
         <div class="item power">
-            <span class="label">电源：</span><button class="ui-button ui-state-active ui-corner-all ui-button-text-only" type="button" state="off" device="{{ device['id'] }}">打开</button>
+            <span class="label">电源：</span><button class="ui-button ui-state-active ui-corner-all ui-button-text-only" type="button" state="{{device['state']['power']}}" device="{{ device['id'] }}">{{"打开" if device["state"]["power"] == "off" else "关闭"}}</button>
         </div>
 
         <div class="item brightness">
@@ -24,7 +24,13 @@
 <script type="text/javascript">
     $(document).ready(function(){
         var brightness = $(".brightness .value");
-        var slider = $(".brightness .slider").slider({
+        $(".brightness .slider").slider()
+        //设置滑动条值
+        $(".brightness .slider").slider("value", {{device["state"]["brightness"]}})
+        //设置数组值
+        brightness.text({{device["state"]["brightness"]}});
+
+        $(".brightness .slider").slider({
             max: 100,
             min: 0,
             step: 1,
@@ -35,7 +41,7 @@
                 var rpc = new $.JsonRpcClient({ ajaxUrl: '/jsonrpc/v1.0/control/' + {{device['id']}}, timeout: 10000 });
                 $(".brightness .slider").slider("disable");
                 rpc.call(
-                    'set_brightness', ui.value,
+                    'set_state', { brightness: ui.value },
                     function(result) {
                         $(".brightness .slider").slider("enable");
                     },
@@ -45,7 +51,6 @@
                 );
             }
         });
-        brightness.text(slider.slider("value"));
 
         $(".power button").click(function(){
             var rpc = new $.JsonRpcClient({ ajaxUrl: '/jsonrpc/v1.0/control/' + {{device['id']}}, timeout: 10000 });

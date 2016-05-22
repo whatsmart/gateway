@@ -72,6 +72,12 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 self.write(resp.dumps().encode("utf-8"))
                 return
 
+            elif self.rpcreq.method == "get_device":
+                resp = jsonrpc.Response(jsonrpc = "2.0", result = device, id = self.rpcreq.id).dumps()
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.encode("utf-8"))
+                return
+
             else:
                 resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "invalid rpc method"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")

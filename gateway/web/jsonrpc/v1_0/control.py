@@ -51,21 +51,61 @@ class JsonrpcControlHandler(ValidRequestHandler):
 
             #将请求转发给设备的管理者,self.request.body为jsonrpc格式，直接转发
             hipc_request = hipc.Request(resource = "control/" + str(did), headers = {"origin": str(id(fut))}, body = self.request.body)
-            for comp in gateway.hub.components:
-                if device["cid"] == comp["id"]:
-                    comp["stream"].write(hipc_request.bytes())
+            for client in gateway.hub.clients:
+                if device["cid"] == client["id"]:
+                    client["stream"].write(hipc_request.bytes())
                     break
 
             try:
                 yield with_timeout(time.time() + 20, fut)
             except TimeoutError:
-                print("timeout")
                 self.set_status(504, "Gateway Timeout")
             else:
-                #hub_resp是jsonrpc格式，直接转发给用户
                 hub_resp = fut.result()
+                assert hub_resp
+                resp = jsonrpc.Response.loads(hub_resp.decode("utf-8"))
+                rpcreq = jsonrpc.Request.loads(self.request.body.decode("utf-8"))
+
+                if hasattr(resp, "result"):
+                    if device["type"] == "lighting":
+                        if rpcreq.method == "power_on":
+                            device["state"]["power"] = "on"
+
+                        elif rpcreq.method == "power_off":
+                            device["state"]["power"] = "off"
+
+                        elif rpcreq.method == "set_color":
+                            assert type(rpcreq.params.get("color")) == int
+                            device["state"]["color"] = rpcreq.params.get("color")
+
+                        elif rpcreq.method == "get_color":
+                            assert type(resp.result) == int
+                            device["state"]["color"] = resp.result
+
+                        elif rpcreq.method == "set_brightness":
+                            assert type(rpcreq.params.get("brightness")) == int
+                            device["state"]["brightness"] = rpcreq.params.get("brightness")
+
+                        elif rpcreq.method == "get_brightness":
+                            assert type(resp.result) == int
+                            device["state"]["brightness"] = resp.result
+
+                        elif rpcreq.method == "set_state":
+                            for key in rpcreq.params.keys():
+                                if key in device["state"].keys():
+                                    device["state"][key] = rpcreq.params[key]
+
+                        elif rpcreq.method == "get_state":
+                            for key in resp.result.keys():
+                                if key in device["state"].keys():
+                                    device["state"][key] = resp.result[key]
+
+                elif hasattr(resp, "error"):
+                    pass
+
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(hub_resp)
+
             finally:
                 gateway.remove_future(fut)
                 self.finish()

@@ -8,7 +8,8 @@ class HubServer(object):
     def __init__(self, routes, *args, **kwargs):
         self.loop = IOLoop.current()
         self.gateway = kwargs.get("gateway")
-        self.components = []
+        self.listeners = []
+        self.clients = []
         self.devices = [{
                         "id": 0,
                         "cid": 0,
@@ -19,9 +20,16 @@ class HubServer(object):
                         "hwversion": "1.2",
                         "swversion": "2.0",
                         "type": "lighting",
-                        "operations": ["power_on", "power_off", "get_color", "set_color", "get_brightness", "set_brightness"] 
+                        "operations": ["power_on", "power_off", "get_color", "set_color", "get_brightness", "set_brightness", "get_state", "set_state"],
+                        "state": {"power": "off", "color": 0xff3344, "brightness": 70}
                        },]
         self.routes = routes
+
+    def get_device(self, did):
+        for dev in self.devices:
+            if dev["id"] == did:
+                return dev
+        return None
 
     def listen(self, port):
         if port:
@@ -36,28 +44,28 @@ class HubServer(object):
         stream = HubStream(conn, routes = self.routes, gateway = self.gateway)
         stream.set_close_callback(self.on_client_close)
 
-        comp = {
+        client = {
             "id": conn.fileno(),
             "name": "unknow",
             "type": "unknow",
             "stream": stream
         }
-        self.components.append(comp)
+        self.clients.append(client)
 
     def on_client_close(self):
-        rm_comp = []
+        rm_client = []
         rm_device = []
-        for comp in self.components:
-            if comp["stream"].closed():
-                rm_comp.append(id(comp))
+        for client in self.clients:
+            if client["stream"].closed():
+                rm_client.append(id(client))
                 for d in self.devices:
-                    if d["cid"] == comp["id"]:
+                    if d["cid"] == client["id"]:
                         rm_device.append(id(d))
 
-        for cid in rm_comp:
-            if comp in self.components:
-                if cid == id(comp):
-                    self.components.remove(comp)
+        for cid in rm_client:
+            if client in self.clients:
+                if cid == id(client):
+                    self.clients.remove(client)
 
         for did in rm_device:
             for d in self.devices:

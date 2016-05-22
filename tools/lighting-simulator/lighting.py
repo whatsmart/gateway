@@ -70,10 +70,10 @@ class LightingClient(object):
                 state = "off"
 
             params = {
-                "name": "device_status_changed",
+                "name": "device_state_changed",
                 "data": {
                     "id": self.did,
-                    "status": {
+                    "state": {
                         "power": state
                     }                
                 }
@@ -86,14 +86,14 @@ class LightingClient(object):
     def color_changed(self, button):
         if self.sock:
             color = self.color_entry.get_text()
-            body = jsonrpc.Request(jsonrpc = "2.0", method="report_event", params = {"name": "device_status_changed", "data": {"id": self.did, "status": {"color": color}}}, id = 1).dumps()
+            body = jsonrpc.Request(jsonrpc = "2.0", method="report_event", params = {"name": "device_state_changed", "data": {"id": self.did, "state": {"color": color}}}, id = 1).dumps()
             request = hipc.Request(resource = "event", body = body.encode("utf-8")).bytes()
             self.sock.send(request)
 
     def brightness_changed(self, button):
         if self.sock:
             brightness = self.brightness_entry.get_text()
-            body = jsonrpc.Request(jsonrpc = "2.0", method="report_event", params = {"name": "device_status_changed", "data": {"id": self.did, "status": {"brightness": brightness}}}, id = 1).dumps()
+            body = jsonrpc.Request(jsonrpc = "2.0", method="report_event", params = {"name": "device_state_changed", "data": {"id": self.did, "state": {"brightness": brightness}}}, id = 1).dumps()
             request = hipc.Request(resource = "event", body = body.encode("utf-8")).bytes()
             self.sock.send(request)
 
@@ -147,7 +147,7 @@ class LightingClient(object):
                 self.sock.send(resp)
 
             elif request.method == "set_color":
-                color = request.params
+                color = request.params.get("color")
                 self.color_entry.set_text(str(color))
                 body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
                 resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
@@ -160,9 +160,39 @@ class LightingClient(object):
                 self.sock.send(resp)
 
             elif request.method == "set_brightness":
-                brightness = request.params
+                brightness = request.params.get("brightness")
                 self.brightness_entry.set_text(str(brightness))
                 body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
+                resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
+                self.sock.send(resp)
+
+            elif request.method == "set_state":
+                power = request.params.get("power")
+                color = request.params.get("color")
+                brightness = request.params.get("brightness")
+                if power:
+                    self.power_switch.set_active(True if power == "on" else False)
+                if color:
+                    print(color)
+                    self.color_entry.set_text(hex(color))
+                if brightness:
+                    self.brightness_entry.set_text(str(brightness))
+                body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
+                resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
+                self.sock.send(resp)
+
+            elif request.method == "get_state":
+                state = {}
+                #get方法参数为列表，json的数组
+                gets = request.params
+                if "power" in gets:
+                    state["power"] = "on" if self.power_switch.get_active() else "off"
+                if "color" in gets:
+                    state["color"] = self.color_entry.get_text()
+                if "brightness" in gets:
+                    state["brightness"] = int(self.brightness_entry.get_text())
+
+                body = jsonrpc.Response(jsonrpc="2.0", result = state, id = request.id).dumps()
                 resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
                 self.sock.send(resp)
 
@@ -170,6 +200,7 @@ class LightingClient(object):
             response = jsonrpc.Response.loads(message.body.decode("utf-8"))
             if response.id == 10000:
                 self.did = int(response.result)
+                print("device id:", self.did)
 
     def connect_server(self, button):
         type = self.sock_type.get_active()
@@ -203,8 +234,8 @@ class LightingClient(object):
             "hwversion": self.hwversion_entry.get_text(),
             "swversion": self.swversion_entry.get_text(),
             "type": "lighting",
-            "operations": ["power_on", "power_off", "get_power_state", "set_color", "get_color", "set_brightness", "get_brightness"],
-            "status": {
+            "operations": ["power_on", "power_off", "set_color", "get_color", "set_brightness", "get_brightness", "get_state", "set_state"],
+            "state": {
                 "power": "on" if self.power_switch.get_active() else "off",
                 "color": self.color_entry.get_text() if self.color_entry.get_text() else 0x0,
                 "brightness": int(self.brightness_entry.get_text()) if self.brightness_entry.get_text() else 0

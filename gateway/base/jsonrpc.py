@@ -41,7 +41,9 @@ class Request(object):
                 return obj
 
     def __getattr__(self, attr):
-        return self.kwargs.get(attr)
+        if attr in self.kwargs.keys():
+            return self.kwargs.get(attr)
+        raise AttributeError
 
 class Response(object):
 
@@ -111,4 +113,6 @@ class Response(object):
                 return obj
 
     def __getattr__(self, attr):
-        return self.kwargs.get(attr)
+        if attr in self.kwargs.keys():
+            return self.kwargs.get(attr)
+        raise AttributeError

@@ -14,7 +14,7 @@ class HubDeviceHandler(jsonrpchandler.JsonrpcHandler):
                 self.gateway.hub.devices.pop(i)
                 break
         else:
-            body = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 0, message = "unknow error"), id = self.rpcid).dumps()
+            body = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "device not found"), id = self.rpcid).dumps()
             resp = hipc.Response(body = body.encode("utf-8"))
             self.stream.write(resp.bytes())
             return
@@ -39,7 +39,8 @@ class HubDeviceHandler(jsonrpchandler.JsonrpcHandler):
             "hwversion": self.params.get("hwversion"),
             "swversion": self.params.get("swversion"),
             "type": self.params.get("type"),
-            "operations": self.params.get("operations") 
+            "operations": self.params.get("operations"),
+            "state": self.params.get("state") or {}
         }
 
         self.gateway.hub.devices.append(dev)
