@@ -41,7 +41,7 @@ class User(object):
         if result:
             for key in result.keys():
                 user[key] = result[key]
-        self.cursor.close()
+        cursor.close()
         self.conn.close()
         return user
 
