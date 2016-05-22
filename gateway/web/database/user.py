@@ -41,6 +41,8 @@ class User(object):
         if result:
             for key in result.keys():
                 user[key] = result[key]
+        self.cursor.close()
+        self.conn.close()
         return user
 
     @catch_db_error
@@ -60,9 +62,11 @@ class User(object):
             if cursor.rowcount != 1:
                 self.conn.commit()
                 cursor.close()
+                self.conn.close()
                 return False
         self.conn.commit()
         cursor.close()
+        self.conn.close()
         return True
 
     @catch_db_error
@@ -73,6 +77,7 @@ class User(object):
         num = cursor.rowcount
         self.conn.commit()
         cursor.close()
+        self.conn.close()
         if num != 1:
             return False
         return True
@@ -89,6 +94,7 @@ class User(object):
         num = cursor.rowcount
         self.conn.commit()
         cursor.close()
+        self.conn.close()
         if num == 0:
             return False
         return True
@@ -116,9 +122,11 @@ class User(object):
             token = self.gen_token(40)
             cursor.execute('''update user set token = ? where username = ?''', (token, username))
             self.conn.commit()
+            self.conn.close()
             cursor.close()
             return {"id": user["id"], "group": user["group"], "permission": user["permission"], "token": token}
         cursor.close()
+        self.conn.close()
         return False
 
     @catch_db_error
@@ -128,6 +136,7 @@ class User(object):
         num = cursor.rowcount
         cursor.close()
         self.conn.commit()
+        self.conn.close()
         if num == 0:
             return False
         return True
@@ -141,13 +150,40 @@ class User(object):
 
         ret = []
         for u in result:
-            user = {}
-            for key in u.keys():
-                user[key] = u[key]
+            user = {
+                "id": u["id"],
+                "username": u["username"],
+                "group": u["group"],
+                "permission": json.loads(u["permission"])
+            }
             ret.append(user)
 
         cursor.close()
+        self.conn.close()
         return ret
+
+    @catch_db_error
+    def get_user(self, uid):
+        self.conn.row_factory = sqlite3.Row
+        cursor = self.conn.cursor()
+        cursor.execute('''SELECT id, username, `group`, permission FROM user where id = ?''', str(uid))
+        result = cursor.fetchone()
+
+        if result:
+            ret = {
+                "id": result["id"],
+                "username": result["username"],
+                "group": result["group"],
+                "permission": json.loads(result["permission"])
+            }
+
+            cursor.close()
+            self.conn.close()
+            return ret
+        else:
+            cursor.close()
+            self.conn.close()
+            return False
 
     @catch_db_error
     def set_permission(self, uid, perm):
@@ -158,6 +194,7 @@ class User(object):
         num = cursor.rowcount
         cursor.close()
         self.conn.commit()
+        self.conn.close()
         if num == 0:
             return False
         return True

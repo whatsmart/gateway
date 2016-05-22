@@ -54,38 +54,6 @@ class JsonrpcUserHandler(ValidRequestHandler):
                     self.write(resp.encode("utf-8"))
                 return
 
-            if uid is None:
-                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "without uid in url"), id = self.rpcreq.id).dumps()
-                self.set_header("Content-Type", "application/json; charset=utf-8")
-                self.write(resp.encode("utf-8"))
-                return
-
-            #删除用户
-            if self.rpcreq.method == "delete_user":
-                if self.conn.delete_user(uid):
-                    self.resp_success()
-                else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
-                    self.set_header("Content-Type", "application/json; charset=utf-8")
-                    self.write(resp.encode("utf-8"))
-                return
-
-            #修改密码
-            elif self.rpcreq.method == "update_password":
-                password = self.rpcreq.params.get("password")
-                if not password:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid password"), id = self.rpcreq.id).dumps()
-                    self.set_header("Content-Type", "application/json; charset=utf-8")
-                    self.write(resp.encode("utf-8"))
-                else:
-                    if self.conn.update_password(uid, password):
-                        self.resp_success()
-                    else:
-                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
-                        self.set_header("Content-Type", "application/json; charset=utf-8")
-                        self.write(resp.encode("utf-8"))
-                return
-
             #用户登陆
             elif self.rpcreq.method == "login":
                 username = self.rpcreq.params.get("username")
@@ -118,6 +86,51 @@ class JsonrpcUserHandler(ValidRequestHandler):
                     self.write(resp.encode("utf-8"))
                 return
 
+            if uid is None:
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "without uid in url"), id = self.rpcreq.id).dumps()
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.encode("utf-8"))
+                return
+
+            #删除用户
+            if self.rpcreq.method == "delete_user":
+                if self.conn.delete_user(uid):
+                    self.resp_success()
+                else:
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
+                return
+
+            #获取单个用户
+            if self.rpcreq.method == "get_user":
+                user = self.conn.get_user(uid)
+                if user:
+                    resp = jsonrpc.Response(jsonrpc = "2.0", result = user, id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
+                else:
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
+                return
+
+            #修改密码
+            elif self.rpcreq.method == "update_password":
+                password = self.rpcreq.params.get("password")
+                if not password:
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid password"), id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
+                else:
+                    if self.conn.update_password(uid, password):
+                        self.resp_success()
+                    else:
+                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
+                        self.set_header("Content-Type", "application/json; charset=utf-8")
+                        self.write(resp.encode("utf-8"))
+                return
+
             #设置用户权限,需管理员权限
             elif self.rpcreq.method == "set_permission":
                 perm = self.rpcreq.params.get("permission")
@@ -138,4 +151,5 @@ class JsonrpcUserHandler(ValidRequestHandler):
 
     def on_finish(self):
         if hasattr(self, "conn"):
-            self.conn.conn.close()
+            pass
+            #self.conn.conn.close()
