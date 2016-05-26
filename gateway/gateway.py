@@ -12,6 +12,7 @@ from .web.device import DeviceHandler
 from .web.jsonrpc.v1_0.device import JsonrpcDeviceHandler
 from .web.jsonrpc.v1_0.user import JsonrpcUserHandler
 from .web.jsonrpc.v1_0.control import JsonrpcControlHandler
+from .web.jsonrpc.v1_0.push import JsonrpcPushHandler
 
 from .hub import devicehandler
 from .hub import eventhandler 
@@ -27,9 +28,10 @@ class Gateway(object):
     device["swversion"] 软件版本
     device["type"] 设备类型，如lighting、Camera
     device["operations"] 支持的操作方法，如“power_on”，该值为列表，如["power_on", "set_color", ...]
+    device["state"] 设备的状态信息
     """
 
-    def __init__(self, hubport = None, webport = 80):
+    def __init__(self, hubport = None, webport = 80, push_server = "http://push.whatsmart.org:8800"):
         self.loop = IOLoop.instance()
         self.root = os.path.dirname(__file__)
         self.futures = []
@@ -37,8 +39,13 @@ class Gateway(object):
                 (r"device", devicehandler.HubDeviceHandler),
                 (r"device/(\d+)", devicehandler.HubDeviceHandler),
                 (r"event", eventhandler.HubEventHandler)
-            ], gateway = self, root = os.path.dirname(__file__))
+            ],
+            gateway = self,
+            root = os.path.dirname(__file__),
+            push_server = push_server
+        )
         self.hub.listen(hubport)
+
         self.web = tornado.web.Application(
             [
                 (r"/", IndexHandler),
@@ -49,11 +56,13 @@ class Gateway(object):
                 (r"/jsonrpc/v1.0/control/(\d+)", JsonrpcControlHandler),
                 (r"/jsonrpc/v1.0/user", JsonrpcUserHandler),
                 (r"/jsonrpc/v1.0/user/(\d+)", JsonrpcUserHandler),
+                (r"/jsonrpc/v1.0/push", JsonrpcPushHandler),
             ],
             compiled_template_cache = False,
             gateway = self,
             root = os.path.dirname(__file__),
-            static_path = os.path.join(os.path.dirname(__file__), "web/static")
+            static_path = os.path.join(os.path.dirname(__file__), "web/static"),
+            push_server = push_server
         )
         self.web.listen(webport)
 
@@ -75,15 +84,18 @@ class Gateway(object):
         self.loop.start()
 
 if __name__ == "__main__":
-    optlist, args = getopt.getopt(sys.argv[1:], "h:w:")
+    optlist, args = getopt.getopt(sys.argv[1:], "h:w:p:")
     hubport = None
     webport = 80
+    push_server = "http://push.whatsmart.org:8800"
     for opt in optlist:
         if "h" in opt[0]:
             hubport = int(opt[1])
         if "w" in opt[0]:
             webport = int(opt[1])
+        if "p" in opt[0]:
+            push_server = opt[1]
 
-    gateway = Gateway(hubport = hubport, webport = webport)
+    gateway = Gateway(hubport = hubport, webport = webport, push_server = push_server)
 
     gateway.run()
