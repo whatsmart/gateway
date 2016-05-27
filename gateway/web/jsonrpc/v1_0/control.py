@@ -66,17 +66,52 @@ class JsonrpcControlHandler(ValidRequestHandler):
                 resp = jsonrpc.Response.loads(hub_resp.decode("utf-8"))
                 rpcreq = jsonrpc.Request.loads(self.request.body.decode("utf-8"))
 
+                device_token = self.request.headers.get("Device-Token")
+
                 if hasattr(resp, "result"):
                     if device["type"] == "lighting":
                         if rpcreq.method == "power_on":
                             device["state"]["power"] = "on"
 
+                            payload = {
+                                "expired": 0,
+                                "data": {
+                                    "device_state_changed": {"id": did, "state": {"power": "on"}}
+                                }
+                            }
+                            if device_token:
+                                gateway.push.push_to_all_except_devices(payload, [device_token])
+                            else:
+                                gateway.push.push_to_all(payload)
+                                
                         elif rpcreq.method == "power_off":
                             device["state"]["power"] = "off"
+
+                            payload = {
+                                "expired": 0,
+                                "data": {
+                                    "device_state_changed": {"id": did, "state": {"power": "off"}}
+                                }
+                            }
+                            if device_token:
+                                gateway.push.push_to_all_except_devices(payload, [device_token])
+                            else:
+                                gateway.push.push_to_all(payload)
 
                         elif rpcreq.method == "set_color":
                             assert type(rpcreq.params.get("color")) == int
                             device["state"]["color"] = rpcreq.params.get("color")
+
+                            payload = {
+                                "expired": 0,
+                                "data": {
+                                    "device_state_changed": {"id": did, "state": {"color": device["state"]["color"]}}
+                                }
+                            }
+                            if device_token:
+                                gateway.push.push_to_all_except_devices(payload, [device_token])
+                            else:
+                                gateway.push.push_to_all(payload)
 
                         elif rpcreq.method == "get_color":
                             assert type(resp.result) == int
@@ -86,14 +121,38 @@ class JsonrpcControlHandler(ValidRequestHandler):
                             assert type(rpcreq.params.get("brightness")) == int
                             device["state"]["brightness"] = rpcreq.params.get("brightness")
 
+                            payload = {
+                                "expired": 0,
+                                "data": {
+                                    "device_state_changed": {"id": did, "state": {"brightness": device["state"]["brightness"]}}
+                                }
+                            }
+                            if device_token:
+                                gateway.push.push_to_all_except_devices(payload, [device_token])
+                            else:
+                                gateway.push.push_to_all(payload)
+
                         elif rpcreq.method == "get_brightness":
                             assert type(resp.result) == int
                             device["state"]["brightness"] = resp.result
 
                         elif rpcreq.method == "set_state":
+                            pairs = {}
                             for key in rpcreq.params.keys():
-                                if key in device["state"].keys():
-                                    device["state"][key] = rpcreq.params[key]
+                                device["state"][key] = rpcreq.params[key]
+                                pairs[key] = rpcreq.params[key]
+
+                            payload = {
+                                "expired": 0,
+                                "data": {
+                                    "device_state_changed": {"id": did, "state": pairs}
+                                }
+                            }
+
+                            if device_token:
+                                gateway.push.push_to_all_except_devices(payload, [device_token])
+                            else:
+                                gateway.push.push_to_all(payload)
 
                         elif rpcreq.method == "get_state":
                             for key in resp.result.keys():

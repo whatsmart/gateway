@@ -64,7 +64,7 @@ class PushMan(push.Push):
 
             httpclient = AsyncHTTPClient()
             response = yield httpclient.fetch(request)
-            print(response.body.decode("utf-8"))
+            #print(response.body.decode("utf-8"))
 
     @gen.coroutine
     def push_to_all_except_users(self, payload, usernames):
@@ -85,7 +85,7 @@ class PushMan(push.Push):
 
             httpclient = AsyncHTTPClient()
             response = yield httpclient.fetch(request)
-            print(response.body.decode("utf-8"))
+            #print(response.body.decode("utf-8"))
 
     @gen.coroutine
     def push_to_all_except_devices(self, payload, deviceids):
@@ -106,7 +106,7 @@ class PushMan(push.Push):
 
             httpclient = AsyncHTTPClient()
             response = yield httpclient.fetch(request)
-            print(response.body.decode("utf-8"))
+            #print(response.body.decode("utf-8"))
 
     @gen.coroutine
     def push_to_user(self, payload, username):
@@ -124,7 +124,7 @@ class PushMan(push.Push):
 
             httpclient = AsyncHTTPClient()
             response = yield httpclient.fetch(request)
-            print(response.body.decode("utf-8"))
+            #print(response.body.decode("utf-8"))
 
     @gen.coroutine
     def push_to_device(self, payload, deviceid):
@@ -141,4 +141,4 @@ class PushMan(push.Push):
 
             httpclient = AsyncHTTPClient()
             response = yield httpclient.fetch(request)
-            print(response.body.decode("utf-8"))
+            #print(response.body.decode("utf-8"))

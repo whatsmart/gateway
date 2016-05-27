@@ -17,6 +17,8 @@ from .web.jsonrpc.v1_0.push import JsonrpcPushHandler
 from .hub import devicehandler
 from .hub import eventhandler 
 
+from .base.pushman import PushMan
+
 class Gateway(object):
     """设备是一个字典列表，每个设备由一个字典表示
     device["id"] 设备在系统中的id，为动态生成
@@ -35,6 +37,7 @@ class Gateway(object):
         self.loop = IOLoop.instance()
         self.root = os.path.dirname(__file__)
         self.futures = []
+        self.push = PushMan(push_server)
         self.hub = gateway.hub.hubserver.HubServer([
                 (r"device", devicehandler.HubDeviceHandler),
                 (r"device/(\d+)", devicehandler.HubDeviceHandler),
@@ -42,7 +45,6 @@ class Gateway(object):
             ],
             gateway = self,
             root = os.path.dirname(__file__),
-            push_server = push_server
         )
         self.hub.listen(hubport)
 
@@ -62,7 +64,6 @@ class Gateway(object):
             gateway = self,
             root = os.path.dirname(__file__),
             static_path = os.path.join(os.path.dirname(__file__), "web/static"),
-            push_server = push_server
         )
         self.web.listen(webport)
 

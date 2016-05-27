@@ -4,6 +4,7 @@ import os
 from . import jsonrpchandler
 from ..base import hipc, jsonrpc
 from . import database
+from ..base.pushman import PushMan
 
 class HubDeviceHandler(jsonrpchandler.JsonrpcHandler):
     def remove_device(self, id = None):
@@ -47,3 +48,14 @@ class HubDeviceHandler(jsonrpchandler.JsonrpcHandler):
         body = jsonrpc.Response(jsonrpc = "2.0", result = did, id = self.rpcid).dumps()
         resp = hipc.Response(body = body.encode("utf-8"))
         self.stream.write(resp.bytes())
+
+        """下面的内容是为了测试推送通知
+        """
+        if dev["vender"] == "notification":
+            payload = {
+                "notification": {
+                    "title": "new device added",
+                    "body": dev["uniqid"]
+                }
+            }
+            self.gateway.push.push_to_all(payload)

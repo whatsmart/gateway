@@ -34,4 +34,4 @@ def send_to_all_except_devices():
     return push.push_to_all_except_devices(payload, ["1cf08127b35cdd89389a90e6617b0695"])
 
 loop = IOLoop.instance()
-loop.run_sync(send_to_all_except_devices)
+loop.run_sync(send_to_all)

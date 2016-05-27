@@ -37,6 +37,7 @@ class LightingClient(object):
         self.swversion_entry.set_text("2.3")
         self.power_switch = self.builder.get_object("power")
         self.power_switch.set_active(False)
+        self.power_switch.connect("state-set", self.power_changed)
         self.color_entry = self.builder.get_object("color")
         self.color_entry.set_text(hex(0))
         self.brightness_entry = self.builder.get_object("brightness")
@@ -61,10 +62,9 @@ class LightingClient(object):
             self.sock_port.set_text("8080")
             self.port_box.show()
 
-    def power_changed(self, button):
+    def power_changed(self, button, state):
         if self.sock:
-            active = self.power_switch.get_active()
-            if active:
+            if state:
                 state = "on"
             else:
                 state = "off"
@@ -173,7 +173,6 @@ class LightingClient(object):
                 if power:
                     self.power_switch.set_active(True if power == "on" else False)
                 if color:
-                    print(color)
                     self.color_entry.set_text(hex(color))
                 if brightness:
                     self.brightness_entry.set_text(str(brightness))

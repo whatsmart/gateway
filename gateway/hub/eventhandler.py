@@ -22,8 +22,15 @@ class HubEventHandler(jsonrpchandler.JsonrpcHandler):
             if device:
                 states = data.get("state")
                 assert states
-                for key in states.keys():
-                    if key in device["state"].keys():
-                        device["state"][k] = states[k]
+                payload = {
+                    "expired": 0,
+                    "data": {
+                        "device_state_changed": {"id": did, "state": {}}
+                    }
+                }
 
-                #@todo push to user
+                for key in states.keys():
+                    device["state"][key] = states[key]
+                    payload["data"]["device_state_changed"]["state"][key] = states[key]
+
+                self.gateway.push.push_to_all(payload)

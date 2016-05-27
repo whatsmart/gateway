@@ -50,8 +50,9 @@ class HubStream(tornado.iostream.IOStream):
                         kwargs = {
                             "gateway": self.gateway,
                             "stream": self,
+                            "jsonrpc": rpc_request.jsonrpc,
                             "params": rpc_request.params,
-                            "rpcid": rpc_request.id
+                            "rpcid": rpc_request.id,
                         }
 
                         handler = r[1](**kwargs)
