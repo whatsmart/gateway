@@ -2,8 +2,8 @@
 
 """payload是字典格式,定义与push.py，pushman采用“个推”提供的接口。
 push中定义的字段个推不能完全支持。notification和data分别代表通知
-和数据透传，一条消息中只能包含其中一项，即或者为通知，或者为透传。
-其中notification部分中android不支持的属性会由“pushman服务器”自动忽略。
+和数据透传。
+
 
 #个推支持情况                                     android         ios
 
@@ -16,10 +16,8 @@ push中定义的字段个推不能完全支持。notification和data分别代表
         "expired": 3600,                           支持
     }
     "notification": {
-        "title": "notification title",             支持          支持
+        "title": "notification title",             支持          
         "body": "notification content",            支持          支持
-        "icon": "filename",                        支持
-        ... 后续添加
     }
     "data": {                                      支持          支持
         "device_state_changed": {

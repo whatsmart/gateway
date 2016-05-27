@@ -15,8 +15,6 @@ payload中的字段信息参考谷歌gcm：https://developers.google.com/cloud-m
     "notification": {
         "title": "notification title",
         "body": "notification content",
-        "icon": "filename",
-        ... 后续添加
     }
     "data": {
         "device_state_changed": {
