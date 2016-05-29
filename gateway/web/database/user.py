@@ -156,7 +156,8 @@ class User(object):
     def get_user(self, uid):
         self.conn.row_factory = sqlite3.Row
         cursor = self.conn.cursor()
-        cursor.execute('''SELECT id, username, `group`, permission FROM user where id = ?''', str(uid))
+        sql = 'SELECT id, username, `group`, permission FROM user where id = ' + '"' + str(uid) + '"'
+        cursor.execute(sql)
         result = cursor.fetchone()
 
         if result:
