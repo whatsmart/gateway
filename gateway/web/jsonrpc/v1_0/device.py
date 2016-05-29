@@ -12,6 +12,7 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
             gateway = self.settings["gateway"]
             device = None
 
+            #获取所有设备
             if self.rpcreq.method == "get_devices":
                 resp = jsonrpc.Response(jsonrpc = "2.0", result = gateway.hub.devices, id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
@@ -19,67 +20,65 @@ class JsonrpcDeviceHandler(ValidRequestHandler):
                 return
 
             if did is None:
-                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "without a device id in url"), id = self.rpcreq.id).dumps()
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "请求没有指明设备id"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return
 
-            for dev in gateway.hub.devices:
-                if dev["id"] == int(did):
-                    device = dev
-                    break
+            device = gateway.hub.get_device(int(did))
 
             if device is None:
-                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "can't find the device with that id"), id = self.rpcreq.id).dumps()
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "设备可能已掉线，请刷新后查看"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return
 
-            if self.rpcreq.method == "set_name":
-                name = self.rpcreq.params.get("name")
-                if not name:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "need a string"), id = self.rpcreq.id).dumps()
-                    self.set_header("Content-Type", "application/json; charset=utf-8")
-                    self.write(resp.encode("utf-8"))
-                else:
-                    # @todo update name in database
-                    device["name"] = name
-                    self.resp_success()
-                return
-
-            elif self.rpcreq.method == "get_name":
-                resp = jsonrpc.Response(jsonrpc = "2.0", result = device["name"], id = self.rpcreq.id)
-                self.set_header("Content-Type", "application/json; charset=utf-8")
-                self.write(resp.dumps().encode("utf-8"))
-                return
-
-            elif self.rpcreq.method == "set_position":
-                position = self.rpcreq.params.get("position")
-
-                if not position:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "need a string"), id = self.rpcreq.id).dumps()
-                    self.set_header("Content-Type", "application/json; charset=utf-8")
-                    self.write(resp.encode("utf-8"))
-                else:
-                    # @todo update position in database
-                    device["position"] = position
-                    self.resp_success()
-                return
-
-            elif self.rpcreq.method == "get_position":
-                resp = jsonrpc.Response(jsonrpc = "2.0", result = device["position"], id = self.rpcreq.id)
-                self.set_header("Content-Type", "application/json; charset=utf-8")
-                self.write(resp.dumps().encode("utf-8"))
-                return
-
-            elif self.rpcreq.method == "get_device":
+            #根据id获取特定设备
+            if self.rpcreq.method == "get_device":
                 resp = jsonrpc.Response(jsonrpc = "2.0", result = device, id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return
 
+            #获取设备的描述信息：名称，位置
+            elif self.rpcreq.method == "get_info":
+                if "name" not in self.rpcreq.params and "position" not in self.rpcreq.params:
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "参数不合法"), id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
+                else:
+                    ret = {}
+                    for field in self.rpcreq.params:
+                        if field in device.keys():
+                            ret[field] = device[field]
+
+                    resp = jsonrpc.Response(jsonrpc = "2.0", result = ret, id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
+
+                return
+
+            elif self.rpcreq.method == "set_info":
+                if "name" not in self.rpcreq.params.keys() and "position" not in self.rpcreq.params.keys():
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "参数不合法"), id = self.rpcreq.id).dumps()
+                    self.set_header("Content-Type", "application/json; charset=utf-8")
+                    self.write(resp.encode("utf-8"))
+                else:
+                    # @todo update name, position in database
+                    name = self.rpcreq.params.get("name")
+                    position = self.rpcreq.params.get("position")
+
+                    if name:
+                        device["name"] = name
+                    if position:
+                        device["position"] = position
+
+                    self.resp_success()
+
+                return
+
             else:
-                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "invalid rpc method"), id = self.rpcreq.id).dumps()
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 1, message = "方法不存在"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return

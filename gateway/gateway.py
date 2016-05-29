@@ -33,7 +33,7 @@ class Gateway(object):
     device["state"] 设备的状态信息
     """
 
-    def __init__(self, hubport = None, webport = 80, push_server = "http://push.whatsmart.org:8800"):
+    def __init__(self, hubport = None, webport = 80, push_server = "http://121.42.156.167/:8800"):
         self.loop = IOLoop.instance()
         self.root = os.path.dirname(__file__)
         self.futures = []
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     optlist, args = getopt.getopt(sys.argv[1:], "h:w:p:")
     hubport = None
     webport = 80
-    push_server = "http://push.whatsmart.org:8800"
+    push_server = "http://localhost:8800"
     for opt in optlist:
         if "h" in opt[0]:
             hubport = int(opt[1])

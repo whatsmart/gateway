@@ -16,7 +16,7 @@ class JsonrpcUserHandler(ValidRequestHandler):
             return None
 
     def resp_database_error(self):
-        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "database error"), id = self.rpcreq.id).dumps()
+        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "数据库错误"), id = self.rpcreq.id).dumps()
         self.set_header("Content-Type", "application/json; charset=utf-8")
         self.write(resp.encode("utf-8"))
 
@@ -45,11 +45,11 @@ class JsonrpcUserHandler(ValidRequestHandler):
                     if self.conn.create_user(username, password):
                         self.resp_success()
                     else:
-                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "username already exists"), id = self.rpcreq.id).dumps()
+                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "用户已经存在"), id = self.rpcreq.id).dumps()
                         self.set_header("Content-Type", "application/json; charset=utf-8")
                         self.write(resp.encode("utf-8"))
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid username or password"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "参数不合法"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 return
@@ -59,35 +59,48 @@ class JsonrpcUserHandler(ValidRequestHandler):
                 username = self.rpcreq.params.get("username")
                 password = self.rpcreq.params.get("password")
                 if username and password:
-                    ret = self.conn.login_user(username, password)
-                    if ret:
-                        resp = jsonrpc.Response(jsonrpc = "2.0", result = ret, id = self.rpcreq.id).dumps()
-                        self.set_header("Content-Type", "application/json; charset=utf-8")
-                        self.write(resp.encode("utf-8"))
+                    users = self.conn.get_users()
+
+                    for u in users:
+                        if username == u["username"]:
+                            ret = self.conn.login_user(username, password)
+                            if ret:
+                                resp = jsonrpc.Response(jsonrpc = "2.0", result = ret, id = self.rpcreq.id).dumps()
+                                self.set_header("Content-Type", "application/json; charset=utf-8")
+                                self.write(resp.encode("utf-8"))
+                            else:
+                                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "密码错误"), id = self.rpcreq.id).dumps()
+                                self.set_header("Content-Type", "application/json; charset=utf-8")
+                                self.write(resp.encode("utf-8"))
+                            break
                     else:
-                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "username or password wrong"), id = self.rpcreq.id).dumps()
+                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "用户不存在"), id = self.rpcreq.id).dumps()
                         self.set_header("Content-Type", "application/json; charset=utf-8")
                         self.write(resp.encode("utf-8"))
+
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid username or password"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "参数不合法"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
+
                 return
 
             #用户注销
             elif self.rpcreq.method == "logout":
                 user = self.get_user_from_authtoken()
                 if user:
-                    self.conn.logout_user(user["id"])
-                    self.resp_success()
+                    if self.conn.logout_user(user["id"]):
+                        self.resp_success()
+                    else:
+                        self.resp_database_error()
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "you are not logged in current"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "您没有登录"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 return
 
             if uid is None:
-                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "without uid in url"), id = self.rpcreq.id).dumps()
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "请求没有指明用户id"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return
@@ -97,7 +110,7 @@ class JsonrpcUserHandler(ValidRequestHandler):
                 if self.conn.delete_user(uid):
                     self.resp_success()
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "用户不存在"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 return
@@ -110,7 +123,7 @@ class JsonrpcUserHandler(ValidRequestHandler):
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "用户不存在"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 return
@@ -119,30 +132,30 @@ class JsonrpcUserHandler(ValidRequestHandler):
             elif self.rpcreq.method == "update_password":
                 password = self.rpcreq.params.get("password")
                 if not password:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid password"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "参数不合法"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 else:
                     if self.conn.update_password(uid, password):
                         self.resp_success()
                     else:
-                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
+                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "用户不存在"), id = self.rpcreq.id).dumps()
                         self.set_header("Content-Type", "application/json; charset=utf-8")
                         self.write(resp.encode("utf-8"))
                 return
 
             #设置用户权限,需管理员权限
             elif self.rpcreq.method == "set_permission":
-                perm = self.rpcreq.params.get("permission")
+                perm = self.rpcreq.params
                 if self.conn.set_permission(uid, perm):
                     self.resp_success()
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "user doesn't exists"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "用户不存在"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
 
             else:
-                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid rpc method"), id = self.rpcreq.id).dumps()
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "方法不存在"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return

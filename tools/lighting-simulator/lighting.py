@@ -173,7 +173,7 @@ class LightingClient(object):
                 if power:
                     self.power_switch.set_active(True if power == "on" else False)
                 if color:
-                    self.color_entry.set_text(hex(color))
+                    self.color_entry.set_text(color)
                 if brightness:
                     self.brightness_entry.set_text(str(brightness))
                 body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()

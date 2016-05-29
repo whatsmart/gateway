@@ -11,7 +11,7 @@ class ValidRequestHandler(RequestHandler):
         self.write(resp.dumps().encode("utf-8"))
 
     def resp_success(self):
-        resp = jsonrpc.Response(jsonrpc = "2.0", result = None, id = self.rpcreq.id)
+        resp = jsonrpc.Response(jsonrpc = "2.0", result = True, id = self.rpcreq.id)
         self.set_header("Content-Type", "application/json; charset=utf-8")
         self.write(resp.dumps().encode("utf-8"))
 

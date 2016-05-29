@@ -13,8 +13,8 @@ class HubServer(object):
         self.devices = [{
                         "id": 0,
                         "cid": 0,
-                        "name": "未命名",
-                        "position": "未设置",
+                        "name": "客厅1",
+                        "position": "客厅",
                         "vender": "Obama",
                         "uniqid": "er-fd-ef-gf-cv-df",
                         "hwversion": "1.2",

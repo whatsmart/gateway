@@ -53,18 +53,16 @@ class User(object):
         cursor.execute('''SELECT * FROM user''')
         users = cursor.fetchall()
 
-        if(len(users) == 0):
-            cursor.execute('''INSERT INTO user (username, password, `group`) VALUES (?, ?, ?)''', (username, digest, "admin"))
-        else:
-            cursor.execute('''INSERT INTO user (username, password, `group`) VALUES (?, ?, ?)''', (username, digest, "user"))
+        try:
+            cursor.execute('''INSERT INTO user (username, password, `group`) VALUES (?, ?, ?)''', (username, digest, "user" if len(users) else "admin"))
+        except Exception:
             #用户名已经存在
-            if cursor.rowcount != 1:
-                self.conn.commit()
-                cursor.close()
-                return False
-        self.conn.commit()
-        cursor.close()
-        return True
+            cursor.close()
+            return False
+        else:
+            self.conn.commit()
+            cursor.close()
+            return True
 
     @catch_db_error
     def delete_user(self, uid):
@@ -118,7 +116,7 @@ class User(object):
             cursor.execute('''update user set token = ? where username = ?''', (token, username))
             self.conn.commit()
             cursor.close()
-            return {"id": user["id"], "group": user["group"], "permission": json.loads(user["permission"]) if user["permission"] else {}, "token": token}
+            return {"id": user["id"], "group": user["group"], "permission": json.loads(user["permission"]) if user["permission"] else [], "token": token}
         cursor.close()
         return False
 
@@ -146,7 +144,7 @@ class User(object):
                 "id": u["id"],
                 "username": u["username"],
                 "group": u["group"],
-                "permission": json.loads(u["permission"]) if u["permission"] else {}
+                "permission": json.loads(u["permission"]) if u["permission"] else []
             }
             ret.append(user)
 
@@ -165,7 +163,7 @@ class User(object):
                 "id": result["id"],
                 "username": result["username"],
                 "group": result["group"],
-                "permission": json.loads(result["permission"]) if result["permission"] else {}
+                "permission": json.loads(result["permission"]) if result["permission"] else []
             }
 
             cursor.close()

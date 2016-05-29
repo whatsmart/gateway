@@ -17,7 +17,7 @@ class JsonrpcPushHandler(ValidRequestHandler):
             return None
 
     def resp_database_error(self):
-        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "database error"), id = self.rpcreq.id).dumps()
+        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "数据库错误"), id = self.rpcreq.id).dumps()
         self.set_header("Content-Type", "application/json; charset=utf-8")
         self.write(resp.encode("utf-8"))
 
@@ -30,17 +30,22 @@ class JsonrpcPushHandler(ValidRequestHandler):
 
             device_token = self.request.headers.get("Device-Token")
 
+            if not device_token:
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "没有Device-Token"), id = self.rpcreq.id).dumps()
+                self.set_header("Content-Type", "application/json; charset=utf-8")
+                self.write(resp.encode("utf-8"))
+
             #设备token设置名称
             if self.rpcreq.method == "set_client_info":
                 name = self.rpcreq.params.get("name")
                 platform = self.rpcreq.params.get("platform")
-                if name and platform and device_token:
+                if name and platform:
                     if self.dbclient.set_client_info(device_token, name, platform):
                         self.resp_success()
                     else:
                         self.resp_database_error()
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid name, platform or device-token"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "参数不合法"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 return
@@ -49,15 +54,15 @@ class JsonrpcPushHandler(ValidRequestHandler):
             elif self.rpcreq.method == "bind_user":
                 user = self.get_user_from_authtoken()
 
-                if user and device_token:
+                if user:
                     if self.dbclient.bind_user(device_token, user["username"]):
                         self.resp_success()
                     else:
-                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "you should set_device_name first"), id = self.rpcreq.id).dumps()
+                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "您应先注册设备"), id = self.rpcreq.id).dumps()
                         self.set_header("Content-Type", "application/json; charset=utf-8")
                         self.write(resp.encode("utf-8"))
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid user or device-token"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "您没有登录"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 return
@@ -66,22 +71,22 @@ class JsonrpcPushHandler(ValidRequestHandler):
             elif self.rpcreq.method == "unbind_user":
                 user = self.get_user_from_authtoken()
 
-                if user and device_token:
+                if user:
                     ret = self.dbclient.unbind_user(device_token, user["username"])
                     if ret:
                         self.resp_success()
                     else:
-                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "not binded"), id = self.rpcreq.id).dumps()
+                        resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "没有绑定"), id = self.rpcreq.id).dumps()
                         self.set_header("Content-Type", "application/json; charset=utf-8")
                         self.write(resp.encode("utf-8"))
                 else:
-                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid user or device-token"), id = self.rpcreq.id).dumps()
+                    resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "您没有登录"), id = self.rpcreq.id).dumps()
                     self.set_header("Content-Type", "application/json; charset=utf-8")
                     self.write(resp.encode("utf-8"))
                 return
 
             else:
-                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "invalid rpc method"), id = self.rpcreq.id).dumps()
+                resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "方法不存在"), id = self.rpcreq.id).dumps()
                 self.set_header("Content-Type", "application/json; charset=utf-8")
                 self.write(resp.encode("utf-8"))
                 return
