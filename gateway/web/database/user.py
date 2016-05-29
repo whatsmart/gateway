@@ -61,8 +61,9 @@ class User(object):
             return False
         else:
             self.conn.commit()
+            uid = cursor.lastrowid
             cursor.close()
-            return True
+            return self.get_user(uid)
 
     @catch_db_error
     def delete_user(self, uid):

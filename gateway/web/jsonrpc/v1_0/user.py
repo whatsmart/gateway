@@ -42,8 +42,11 @@ class JsonrpcUserHandler(ValidRequestHandler):
                 username = self.rpcreq.params.get("username")
                 password = self.rpcreq.params.get("password")
                 if username and password:
-                    if self.conn.create_user(username, password):
-                        self.resp_success()
+                    user = self.conn.create_user(username, password)
+                    if user:
+                        resp = jsonrpc.Response(jsonrpc = "2.0", result = user, id = self.rpcreq.id).dumps()
+                        self.set_header("Content-Type", "application/json; charset=utf-8")
+                        self.write(resp.encode("utf-8"))
                     else:
                         resp = jsonrpc.Response(jsonrpc = "2.0", error = jsonrpc.Response.Error(code = 3, message = "用户已经存在"), id = self.rpcreq.id).dumps()
                         self.set_header("Content-Type", "application/json; charset=utf-8")
