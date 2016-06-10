@@ -70,7 +70,7 @@ class HubServer(object):
 
     def get_client(self, cid):
         for client in self.clients:
-            if cid == client.id:
+            if cid == client["id"]:
                 return client
 
         return None

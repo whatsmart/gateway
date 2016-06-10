@@ -57,7 +57,8 @@ class JsonrpcControlHandler(ValidRequestHandler):
                 yield with_timeout(time.time() + 20, fut)
             except TimeoutError:
                 #响应超时，设备可能掉线，从网关中移除
-                gateway.hub.devices.remove(device)
+                if device in gateway.hub.devices:
+                    gateway.hub.devices.remove(device)
                 #如果设备接口层只有一个设备，关闭这个socket
                 if gateway.hub.get_client_devices_number(device["cid"]) <= 1:
                     client = gateway.hub.get_client(device["cid"])
