@@ -125,13 +125,13 @@ class LightingClient(object):
             dest = message.headers.get("origin")
             if request.method == "power_on":
                 self.power_switch.set_active(True)
-                body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
+                body = jsonrpc.Response(jsonrpc="2.0", result = True, id = request.id).dumps()
                 resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
                 self.sock.send(resp)
 
             elif request.method == "power_off":
                 self.power_switch.set_active(False)
-                body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
+                body = jsonrpc.Response(jsonrpc="2.0", result = True, id = request.id).dumps()
                 resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
                 self.sock.send(resp)
 
@@ -149,7 +149,7 @@ class LightingClient(object):
             elif request.method == "set_color":
                 color = request.params.get("color")
                 self.color_entry.set_text(str(color))
-                body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
+                body = jsonrpc.Response(jsonrpc="2.0", result = True, id = request.id).dumps()
                 resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
                 self.sock.send(resp)
 
@@ -162,7 +162,7 @@ class LightingClient(object):
             elif request.method == "set_brightness":
                 brightness = request.params.get("brightness")
                 self.brightness_entry.set_text(str(brightness))
-                body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
+                body = jsonrpc.Response(jsonrpc="2.0", result = True, id = request.id).dumps()
                 resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
                 self.sock.send(resp)
 
@@ -176,7 +176,7 @@ class LightingClient(object):
                     self.color_entry.set_text(color)
                 if brightness:
                     self.brightness_entry.set_text(str(brightness))
-                body = jsonrpc.Response(jsonrpc="2.0", result = None, id = request.id).dumps()
+                body = jsonrpc.Response(jsonrpc="2.0", result = True, id = request.id).dumps()
                 resp = hipc.Response(dest = dest, body = body.encode("utf-8")).bytes()
                 self.sock.send(resp)
 
